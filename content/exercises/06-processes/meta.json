@@ -1,0 +1,15 @@
+{
+  "id": "06-processes",
+  "title": "Build a process table with PCBs and a state machine",
+  "brief": "Create processes, move them through new, ready, running, blocked, zombie, and terminated, orphan children to init, and reap zombies with wait.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "The state machine is a dict from each state to the set of states it may move to. `can_transition` is one lookup.",
+    "Look up a pid with `self.procs[pid]`, and turn a `KeyError` into `NoSuchProcess` once, in `get`, so every other method can call `get`.",
+    "`transition` has three rules to enforce before it changes anything: the move is legal, `zombie` and `terminated` are entered only through `exit` and `wait`, and no other process is already running.",
+    "In `exit`, set the state and status first, then hand every child to pid 1: change its `ppid` and append it to init's `children`.",
+    "`wait` has three outcomes. A zombie child gives `(pid, status)` and becomes terminated. Live children and no zombie give `None`. No children at all raises `NoChildren`."
+  ]
+}

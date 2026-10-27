@@ -1,0 +1,16 @@
+{
+  "id": "15-tlbs",
+  "title": "Build a TLB with LRU and measure hit rates",
+  "brief": "Cache translations in a small LRU TLB in front of a page table, compare ASIDs with flushing on a context switch, and measure hit rates on array walks.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "collections.OrderedDict keeps insertion order. move_to_end(key) marks a key as most recently used, and popitem(last=False) removes the least recently used one.",
+    "A TLB entry is keyed by (asid, vpn). A lookup that hits must refresh the entry's recency, or the eviction order is wrong.",
+    "On a miss, the MMU walks the page table: page_tables[asid][vpn] gives the frame, and a missing vpn raises PageFault. Insert into the TLB only after a successful walk.",
+    "Without ASIDs the hardware has no tag to tell processes apart. Use tag 0 for every entry, and flush the whole TLB when switch() moves to a different process.",
+    "For a sequential walk with stride s bytes in pages of P bytes, each page holds P / s accesses and only the first one misses. The hit rate is 1 - s / P, floored at 0.",
+    "Effective access time: a hit costs tlb_ns + mem_ns. A miss costs tlb_ns + levels * mem_ns (the walk) + mem_ns (the data access)."
+  ]
+}

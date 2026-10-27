@@ -1,0 +1,64 @@
+# The Operating Systems course app.
+#
+# Caddy on this host terminates TLS for os.ifkash.dev and proxies to os:8000
+# over the shared `edge` network, behind Authelia forward auth (a full gate, like
+# gpu.ifkash.dev). Caddy sends `X-SSO-Proxy` (the shared secret) plus
+# `Remote-User`, so the app signs readers in without a form of its own. This
+# bundle must never publish 80 or 443 itself.
+#
+#   docker compose up -d --build
+#
+# scripts/deploy.sh does a git pull on this host and runs the line above with
+# GIT_SHA set to the commit being deployed.
+
+name: os
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # scripts/deploy.sh sets this to the commit being deployed.
+        GIT_SHA: ${GIT_SHA:-unknown}
+    image: os-course:local
+    container_name: os
+    restart: unless-stopped
+    expose:
+      - "8000"
+    ports:
+      # Localhost only. Caddy reaches the container over `edge`, so this is not
+      # a route in from outside; it exists for local checks and SSH tunnels:
+      #   ssh -L 8098:127.0.0.1:8098 ifkash@vm.ifkash.dev
+      - "127.0.0.1:8098:8000"
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - os-data:/data
+    networks:
+      - edge
+    # A reader's submission is a subprocess inside this container, so cap what
+    # the container as a whole can take from the host. pids_limit leaves room
+    # for the process exercises (fork, pipes) and stops a fork bomb.
+    cpus: 1.5
+    mem_limit: 1536m
+    pids_limit: 512
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  os-data:
+
+networks:
+  edge:
+    external: true

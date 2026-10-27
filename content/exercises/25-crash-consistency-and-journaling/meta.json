@@ -1,0 +1,15 @@
+{
+  "id": "25-crash-consistency-and-journaling",
+  "title": "Write-ahead logging and crash recovery",
+  "brief": "Log a transaction, commit it, checkpoint it, and recover correctly from a power cut after every single write.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "A block is 16 bytes. TxBegin is b'B' + bytes([txid, n]) + bytes(addrs), padded with .ljust(16, b'\\0'). Decoding is the reverse: check the first byte, then read the next ones.",
+    "The commit is the single write of TxEnd. Every data block must already be in the journal before you write it, or recovery could replay garbage.",
+    "Journal slots: TxBegin at block 0, data copy i at block 1 + i, TxEnd at block 1 + n. Use sorted(updates) so the order is the same every time.",
+    "recover decides with one test: is there a TxBegin at block 0, and is block 1 + n a TxEnd with the same txid? Only then copy the journal blocks to their home addresses.",
+    "Recovery must be safe to run again. Copying the same journal blocks to the same home blocks twice does no harm, and freeing the log is the last step."
+  ]
+}

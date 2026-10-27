@@ -1,0 +1,16 @@
+{
+  "id": "24-building-a-file-system",
+  "title": "Build a very simple file system on a bytearray disk",
+  "brief": "Lay out a superblock, bitmaps, inodes, and data blocks, then write mkfs, allocation, files, directories, and path lookup.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Bit i lives in byte i // 8, at position i % 8. Read it with (buf[i // 8] >> (i % 8)) & 1. To clear it, AND the byte with the inverse mask, kept inside 8 bits.",
+    "Inode number n is at byte n * 64 of the inode table. Divide by the block size for the block, and take the remainder for the offset inside that block.",
+    "In mkfs, the inode table needs ceil(ninodes * 64 / block_size) blocks, and data_start comes right after it. Use -(-a // b) for ceiling division.",
+    "Bit i of the data bitmap stands for block data_start + i. Return the absolute block number from alloc_block, and subtract data_start when you free.",
+    "write_data frees the old blocks, allocates new ones, and fills the last block with zero padding. Check FileTooBig and NoSpace before you free anything, so a failed write leaves the file alone.",
+    "A directory is a file whose bytes are pack_dirents(entries). To add or remove an entry, read the entries, change the list, and write_data the packed result."
+  ]
+}

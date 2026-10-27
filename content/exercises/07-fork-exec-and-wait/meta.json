@@ -1,0 +1,16 @@
+{
+  "id": "07-fork-exec-and-wait",
+  "title": "Create real processes with fork, exec, and wait",
+  "brief": "Decode wait statuses, fork children that report back through pipes, and run real programs with output captured from a pipe.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "`os.fork()` returns twice. It returns 0 in the child and the child's pid in the parent, so `if pid == 0:` is the child's branch.",
+    "End every child with `os._exit(code)` inside `try`/`finally`. A child that returns from your function would run the rest of the test harness a second time.",
+    "A pipe read ends with an empty `bytes` only after every copy of the write end is closed. Close the write end in the parent before you read.",
+    "In the child, `os.dup2(w, 1)` makes the pipe the child's stdout. `os.execvp` keeps file descriptors 0, 1, and 2 across the exec.",
+    "If `os.execvp` fails, it raises. Let `finally: os._exit(127)` run, and the parent sees exit code 127, the shell's \"command not found\".",
+    "`os.WIFEXITED(status)` and `os.WEXITSTATUS(status)` decode a normal exit. `os.WIFSIGNALED(status)` and `os.WTERMSIG(status)` decode a death by signal."
+  ]
+}

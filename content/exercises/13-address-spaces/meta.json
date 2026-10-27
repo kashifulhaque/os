@@ -1,0 +1,16 @@
+{
+  "id": "13-address-spaces",
+  "title": "Translate virtual addresses with base and bounds, then with segments",
+  "brief": "Build the check-and-add that gives every process its own address space, then split the space into code, heap, and a stack that grows down.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Base and bounds is two lines: if not 0 <= vaddr < bounds, raise SegmentationFault; otherwise return base + vaddr.",
+    "With a 14-bit address, the top 2 bits pick the segment and the low 12 bits are the offset: vaddr >> 12 and vaddr & 0xFFF. Anything outside 0..16383 is a fault.",
+    "For a segment that grows up, fault if offset >= size and return base + offset.",
+    "For the stack, base is the physical address just past its top byte. Compute back = SEG_SIZE - offset (how far below the top the byte sits). Fault if back > size, otherwise the physical address is base - back.",
+    "Check the write permission before translating: a write to a segment with writable=False raises SegmentationFault, even when the address is inside the segment.",
+    "relocate copies the bytes first (bytes(mem[lo:hi])) and then writes them, so overlapping source and destination are safe. Validate that the whole new range sits inside mem before you copy anything."
+  ]
+}

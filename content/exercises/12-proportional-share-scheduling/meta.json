@@ -1,0 +1,16 @@
+{
+  "id": "12-proportional-share-scheduling",
+  "title": "Build lottery, stride, and CFS-style schedulers",
+  "brief": "Share the CPU in proportion to tickets or nice values: by random draw, by deterministic passes, and by virtual runtime.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "For the lottery, walk the jobs in sorted name order with a running sum of tickets. The winner is the first job whose running sum is greater than the draw. One call to rng.randrange(total) per slice, no more.",
+    "NICE_TO_WEIGHT is indexed from nice -20, so the weight for nice n is NICE_TO_WEIGHT[n + 20]. Raise ValueError outside -20..19.",
+    "Stride scheduling keeps one pass value per job, starting at 0. Pick the job with the smallest (pass, name), then add its stride, which is STRIDE1 // tickets.",
+    "vruntime grows by ran * 1024 / weight. A nice-0 task has weight 1024, so its vruntime equals real run time. A heavier task's vruntime grows more slowly, so it is picked more often.",
+    "Track min_vruntime: before each decision, raise it to the smallest vruntime among runnable jobs (never lower it). A job that arrives starts at min_vruntime, not at 0, or it would monopolise the CPU until it caught up.",
+    "In cfs, run the chosen job for min(slice_len, remaining) ticks, add the matching vruntime, then decide again. Merge adjacent segments at the end with merge_slices."
+  ]
+}

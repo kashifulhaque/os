@@ -1,0 +1,16 @@
+{
+  "id": "14-paging",
+  "title": "Translate addresses through one- and two-level page tables",
+  "brief": "Split addresses into page number and offset, walk a linear and a two-level page table with permission bits, and measure how much memory each design costs.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "With 4 KiB pages the offset is the low 12 bits: vaddr & 0xFFF. The page number is vaddr >> 12. For a page size that is a power of two, page_size.bit_length() - 1 is the number of offset bits.",
+    "The physical address is entry.frame * page_size + offset. Check the entry before you build it: None, valid False, a vpn past the end of the table, or a missing permission all raise PageFault.",
+    "In a two-level table, the page number splits again: directory index = vpn // entries_per_table, table index = vpn % entries_per_table.",
+    "map_page creates the second-level table on demand: if directory[d] is None, put a list of entries_per_table Nones there before you store the entry.",
+    "Write one small helper that checks an entry and the access kind. translate and translate_two_level can both call it.",
+    "two_level_table_bytes counts the directory itself (len(directory) entries) plus entries_per_table entries for every second-level table that is not None."
+  ]
+}

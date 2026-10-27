@@ -1,0 +1,16 @@
+{
+  "id": "04-what-an-operating-system-does",
+  "title": "Time-slice two programs on one toy CPU",
+  "brief": "Save and restore CPU registers, then build a Machine that shares one CPU between programs using a timer interrupt.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "A context is the CPU's entire private state: the four registers and the program counter. `save_context` copies them out; `restore_context` copies them back in.",
+    "Copy the register list with `list(cpu.regs)` or `cpu.regs[:]`. If you store `cpu.regs` itself, the later run of another program changes your saved copy.",
+    "`restore_context` must also set `cpu.halted = False`. A process that is being restored has not halted.",
+    "`next_runnable` scans from `current + 1` forward, wrapping with `% len(procs)`, and checks `procs[i].done`. Scan `len(procs)` positions so the current process is the last candidate. With `current = -1` the scan starts at process 0.",
+    "In `Machine.run`: restore the context, then run up to `quantum` instructions or until the CPU halts. That is the timer interrupt: the CPU is taken away after `quantum` instructions even if the program has more to do.",
+    "After a slice, save the context. Mark the process done if `cpu.halted` is set. Otherwise count one timer interrupt. Append `(pid, instructions_run)` to `self.schedule`."
+  ]
+}

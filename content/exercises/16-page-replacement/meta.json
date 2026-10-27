@@ -1,0 +1,16 @@
+{
+  "id": "16-page-replacement",
+  "title": "Count page faults under FIFO, LRU, Clock, and OPT",
+  "brief": "Simulate four page-replacement policies on reference strings, count faults, compare them against the optimal policy, and reproduce Belady's anomaly.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "A reference faults exactly when its page is not in memory. The first touch of every page is a fault too (a cold miss). Until memory is full, a fault just loads the page.",
+    "FIFO: keep a collections.deque of resident pages in arrival order. A hit changes nothing. On a fault with full memory, popleft() is the victim.",
+    "LRU: a hit moves the page to the most-recent end. An OrderedDict with move_to_end and popitem(last=False) does this in a few lines.",
+    "Clock: keep two lists of length `frames`, pages and ref bits, plus a hand index. A hit sets the page's bit to 1. On a fault, while the slot under the hand is occupied and its bit is 1, clear the bit and advance. Then put the page there with bit 1 and advance the hand once more.",
+    "OPT: on a fault with full memory, evict the resident page whose next use is farthest in the future. A page that is never used again is the farthest of all.",
+    "find_belady scans frames = 1, 2, ... and returns the first (f, faults_f, faults_f_plus_1) where giving one more frame produced more faults."
+  ]
+}

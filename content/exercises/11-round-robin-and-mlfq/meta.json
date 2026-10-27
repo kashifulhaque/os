@@ -1,0 +1,15 @@
+{
+  "id": "11-round-robin-and-mlfq",
+  "title": "Simulate round robin with context-switch cost and a multi-level feedback queue",
+  "brief": "Give every job a turn with a time quantum, then build a scheduler that learns which jobs are interactive by watching how they use the CPU.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Keep a collections.deque of ready jobs. Admit every job with arrival <= clock before you pop, and again after a slice ends but before you push the preempted job back, so arrivals queue ahead of it.",
+    "A slice lasts min(quantum, remaining). Charge switch_cost only when the next job differs from the job that just ran and the CPU was not idle in between.",
+    "For mlfq, step one tick at a time. Each tick: boost if due, admit arrivals and woken jobs in name order, preempt if a higher queue is non-empty, pick the head of the highest non-empty queue, run one tick, then decide where the job goes.",
+    "After the tick, test in this order: finished, then demote if used >= allotment (and the level is not the last), then block for I/O if since_io == io_every, then re-queue if the quantum is used up.",
+    "A preempted job goes to the front of its queue, not the back, and gets a fresh quantum when it next runs. Allotment use is kept."
+  ]
+}

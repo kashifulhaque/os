@@ -1,0 +1,16 @@
+{
+  "id": "01-python-you-need",
+  "title": "Warm up with small Python functions",
+  "brief": "Write ten small functions over ints, strings, lists, dicts, bytes, and a class, so every later exercise feels familiar.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Each function starts as `raise NotImplementedError`. Delete that line and write a body that ends in `return`.",
+    "For `is_even`, the remainder `n % 2` is 0 for even numbers. A comparison such as `n % 2 == 0` already gives you a bool.",
+    "`divmod(total, 60)` returns the pair `(total // 60, total % 60)`, which is exactly what `split_seconds` needs.",
+    "For `count_words`, loop over `text.lower().split()` and use `counts[word] = counts.get(word, 0) + 1`.",
+    "For `to_binary_string`, collect `n % 2` in a loop while dividing `n` by 2 with `//`. The digits come out backwards, so reverse them at the end. Zero is a special case.",
+    "Slicing a `bytes` object gives a `bytes` object: `data[:4]` is the first four bytes and `data[4:]` is the rest. A `bytearray` supports `buf[i] = value` for a value from 0 to 255."
+  ]
+}

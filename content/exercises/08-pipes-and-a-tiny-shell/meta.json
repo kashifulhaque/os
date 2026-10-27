@@ -1,0 +1,17 @@
+{
+  "id": "08-pipes-and-a-tiny-shell",
+  "title": "Build a tiny shell: pipelines and redirection with pipe and dup2",
+  "brief": "Parse command lines with |, <, and >, then run them as real processes wired together with os.pipe and os.dup2.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Split the token list on the `|` operator first. Then walk each stage: a word joins `argv`, and `<` or `>` takes the next word as a file name.",
+    "A stage with no words in it (`| ls`, `ls |`, `ls | | wc`) is a syntax error. So is `<` or `>` with no word after it.",
+    "Make all the pipes before you fork anything: one `os.pipe()` between each pair of neighbouring commands, plus one more that carries the last command's output to you.",
+    "In each child, `os.dup2(read_end, 0)` and `os.dup2(write_end, 1)` come first. Then close every pipe fd, because the dup'd copies on 0 and 1 are the only ones the command needs.",
+    "Open redirect files in the child after the pipe dup2 calls, so `> file` replaces the pipe on fd 1. Open for writing with `os.O_WRONLY | os.O_CREAT | os.O_TRUNC` and mode `0o644`.",
+    "Python ignores SIGPIPE, and an exec'd program inherits that. Call `signal.signal(signal.SIGPIPE, signal.SIG_DFL)` in the child before the exec, or a producer feeding `head` never stops.",
+    "In the parent, close every pipe fd you hold except the final read end, read until end of file, then `os.waitpid` every child. The status of the last command is the pipeline's status."
+  ]
+}

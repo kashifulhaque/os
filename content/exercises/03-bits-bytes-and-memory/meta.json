@@ -1,0 +1,17 @@
+{
+  "id": "03-bits-bytes-and-memory",
+  "title": "Convert numbers, mask bits, and pack bytes",
+  "brief": "Write base conversion, bit masks and shifts, two's complement, and little- and big-endian packing, then use them to read and write a bytearray memory.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "To convert to base b, repeat: take `n % b` as the next digit (lowest first), then `n //= b`. Look digits up in the string `\"0123456789abcdef\"`. Reverse at the end, and handle 0 on its own.",
+    "To read a string in base b, start with `total = 0` and for each character do `total = total * b + digit_value`. `\"0123456789abcdef\".index(ch)` gives the digit value, and it raises ValueError for a bad character.",
+    "A mask of `count` ones is `(1 << count) - 1`. `get_bits` shifts right by `low`, then ANDs with that mask. `set_bit` uses `value | (1 << index)` to set and `value & ~(1 << index)` to clear.",
+    "`to_unsigned(n, bits)` is `n % (1 << bits)` in Python, because `%` already returns a non-negative result. `to_signed` subtracts `1 << bits` when the top bit (bit `bits - 1`) is set.",
+    "For `pack_uint`, byte number `i` counting from the least significant end is `(value >> (8 * i)) & 0xFF`. Build the list in that order, then reverse it for big-endian.",
+    "`unpack_uint` is the reverse: for little-endian, byte `i` contributes `data[i] << (8 * i)`. For big-endian, reverse the bytes first and use the same loop.",
+    "Python slices never raise for out-of-range indexes, they silently shorten. In `read_word` and `write_word`, check `0 <= addr` and `addr + size <= len(mem)` yourself and raise IndexError."
+  ]
+}

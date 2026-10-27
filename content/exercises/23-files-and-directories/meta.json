@@ -1,0 +1,15 @@
+{
+  "id": "23-files-and-directories",
+  "title": "Use the real file API and walk a directory tree",
+  "brief": "Read and write files with raw file descriptors, inspect inodes, tell hard links from symbolic links, print a directory tree, and normalise paths.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "os.write may write fewer bytes than you asked for. Loop, slicing off what was written, until nothing is left. Always close the descriptor in a finally block.",
+    "os.read(fd, n) returns b'' at end of file. Read in chunks of 4096 or so and join the pieces.",
+    "os.stat follows symbolic links and os.lstat does not. A hard link shares both st_dev and st_ino with the original. A symbolic link has its own inode.",
+    "For walk_tree, sort the os.scandir entries by name, use entry.is_dir(follow_symlinks=False), and call os.readlink for symbolic links. Recurse with depth + 1.",
+    "For normalize_path, split on '/', skip empty parts and '.', and keep a stack. A '..' pops the stack, unless the stack is empty: then an absolute path drops it and a relative path keeps it. Also keep it when the top of the stack is itself a '..'."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "02-how-a-computer-runs-a-program",
+  "title": "Build a toy CPU that runs programs",
+  "brief": "Implement fetch-decode-execute for a ten-instruction machine, then write a small program in its machine language.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "A program is a list of tuples such as `(\"LOADI\", 0, 5)`. Fetch is `instr = self.program[self.pc]`; decode is reading `instr[0]`.",
+    "Add one to `self.pc` right after fetching, before you execute. Then `JMP` and `JZ` only need to overwrite `self.pc` with their target.",
+    "Check `0 <= self.pc < len(self.program)` before fetching, and check register numbers and memory addresses before using them. Raise `CPUError` for each problem.",
+    "`run` is a loop: `while not self.halted:` call `self.step()`. Count steps, and raise `CPUError` when the count passes `max_steps` so an infinite loop cannot hang.",
+    "For `make_sum_program(n)`: keep a running total in R0 and a counter in R1. Loop: if R1 is 0 jump to the end, otherwise add R1 to R0, subtract 1 from R1, and jump back. R2 can hold the constant 1.",
+    "`JZ` tests a register, so the loop test for `make_sum_program` is `(\"JZ\", 1, end_index)`. Count instruction positions from 0 to find `end_index`."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "22-disks-and-io",
+  "title": "Disk access time and disk schedulers",
+  "brief": "Compute seek, rotation, and transfer time for a hard disk, then order a queue of track requests with FCFS, SSTF, SCAN, and C-LOOK.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "One full rotation takes 60000 / rpm milliseconds. On average the target sector is half a rotation away, so average rotational latency is half of that.",
+    "Transfer time is bytes divided by bytes per second. Convert megabytes per second to bytes per second with 1,000,000 bytes per megabyte, then multiply by 1000 for milliseconds.",
+    "For SSTF, pick min(pending, key=...) with a key of (distance, track). Ties go to the lower track, so the track belongs in the key. Remove one copy of the request with list.remove.",
+    "For SCAN going up, split the queue into tracks >= start and tracks < start. Sort the first ascending. If the second is not empty, add max_track to the path unless the head already ends there, then add the second sorted descending.",
+    "C-LOOK never turns around. Serve tracks >= start ascending, then jump to the lowest remaining track and keep ascending. The jump counts as head movement."
+  ]
+}

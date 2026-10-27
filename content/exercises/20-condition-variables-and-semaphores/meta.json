@@ -1,0 +1,16 @@
+{
+  "id": "20-condition-variables-and-semaphores",
+  "title": "Bounded buffer, semaphore, and reader-writer lock with Condition",
+  "brief": "Use threading.Condition to build a blocking bounded buffer, a counting semaphore, and a reader-writer lock, then run a producer-consumer pipeline that delivers every item exactly once.",
+  "needs_gpu": false,
+  "timeout": 60,
+  "packages": [],
+  "hints": [
+    "A Condition is a lock plus a waiting room. Always call wait() inside `with cond:` and inside a `while` loop that re-tests the thing you are waiting for. After wait() returns, the world may have changed again.",
+    "For the buffer, make `threading.Lock()` once and two Conditions from it: `threading.Condition(lock)`. Producers wait on not_full, consumers wait on not_empty. put() notifies not_empty. get() notifies not_full.",
+    "Use notify() when one waiter can make progress, as with one item added. Use notify_all() when several waiters may be able to proceed or when waiters wait for different things, as in the reader-writer lock.",
+    "The semaphore needs one Condition, a counter, and a while loop: `while self._value == 0: self._cond.wait()`. release() adds 1 and calls notify().",
+    "Reader-writer lock: keep a reader count and a `writing` flag under one Condition. Readers wait while writing. Writers wait while writing or readers > 0. Wake everyone when the last reader leaves and when a writer leaves.",
+    "run_pipeline: start the producers and consumers, join the producers, then put one None per consumer, then join the consumers. Putting the pills before the producers finish can strand items behind them."
+  ]
+}

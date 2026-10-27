@@ -1,0 +1,16 @@
+{
+  "id": "26-protection-virtual-machines-and-containers",
+  "title": "Permission checks, a toy hypervisor, and resource limits",
+  "brief": "Decide Unix file access from mode bits, trap and emulate privileged guest instructions, and limit a real child process with setrlimit.",
+  "needs_gpu": false,
+  "timeout": 60,
+  "packages": [],
+  "hints": [
+    "Pick the class first: owner if uid matches, else group if the file's group is in gids, else other. Shift the mode right by 6, 3, or 0 and mask with 7. Then test (bits & want) == want.",
+    "Root skips the class lookup. Read and write always pass. Execute passes only if (mode & 0o111) is non-zero, or the target is a directory.",
+    "Deleting a file needs write and execute on the directory, not on the file. The sticky bit is mode & 0o1000. When it is set, only root, the directory's owner, or the file's owner may delete.",
+    "In run_vm, wrap hw_execute in try/except PrivilegeTrap and call emulate_privileged in the except branch. Count each path. The emulator must add 1 to vm.pc, because the hardware did not.",
+    "In run_limited the child runs setrlimit, then func(), and always ends in os._exit inside try/finally. The parent polls os.waitpid(pid, os.WNOHANG) and sends SIGKILL after the timeout.",
+    "os.WIFSIGNALED(status) tells you a signal ended the process, and os.WTERMSIG(status) gives its number. Otherwise os.WEXITSTATUS(status) is the exit code."
+  ]
+}

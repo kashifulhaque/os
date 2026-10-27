@@ -1,0 +1,16 @@
+{
+  "id": "18-threads-and-race-conditions",
+  "title": "Enumerate every interleaving and catch the lost update",
+  "brief": "Run threads as lists of atomic steps, list every schedule, find the one that loses an increment, then fix the race with a real lock.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Machine.step reads the step at pc[tid], dispatches on op[0], and then adds 1 to pc[tid]. Registers live in regs[tid], a dict, so thread 1's register r is not thread 0's register r.",
+    "Use dict.get(key, 0) for reads, so a register or address nobody has written yet reads as 0.",
+    "interleavings is a recursion: for each thread that still has steps left, choose it for the next slot, recurse on the remaining counts, and undo the choice. Loop over thread ids in ascending order and the output is already lexicographic.",
+    "run_schedule makes one fresh Machine and loops over the schedule. Check machine.done(tid) before each step, so extra entries for a finished thread do nothing.",
+    "Two threads of three steps have 20 interleavings. Only two of them (all of thread 0 first, or all of thread 1 first) keep both increments.",
+    "A threading.Lock is used as `with lock:` around total[0] += 1. Create the lock once, before starting the threads, so every thread shares the same one."
+  ]
+}

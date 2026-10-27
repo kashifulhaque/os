@@ -1,0 +1,16 @@
+{
+  "id": "17-heap-allocation",
+  "title": "Build a free-list allocator with splitting and coalescing",
+  "brief": "Implement malloc and free over a fixed arena with first-fit and best-fit search, block splitting, neighbour coalescing, error detection, and a fragmentation metric.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Model the arena as a sorted list of blocks (offset, payload_size, is_free). A block takes HEADER + payload_size bytes, so the next block starts at offset + HEADER + payload_size. The caller's address is offset + HEADER.",
+    "round_up(n, align) is (n + align - 1) // align * align. Always round a request up before you search.",
+    "find_block skips blocks that are allocated or too small. First fit returns the first remaining index. Best fit returns the smallest remaining payload, and the lowest address on a tie.",
+    "Split only when the leftover is big enough to be a block: size - need >= HEADER + ALIGN. The leftover starts at offset + HEADER + need and has payload size - need - HEADER. Otherwise give away the whole block.",
+    "Merging two adjacent free blocks removes one header: the merged payload is a.size + HEADER + b.size. In coalesce, compare each block with the last block you kept.",
+    "free(addr) has three outcomes. An address that is the payload start of an allocated block frees it. An address inside a free block's payload is a DoubleFree. Any other address is an InvalidFree."
+  ]
+}

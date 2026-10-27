@@ -1,0 +1,15 @@
+{
+  "id": "10-scheduling-basics",
+  "title": "Simulate FCFS, SJF, and SRTF and measure turnaround, waiting, and response time",
+  "brief": "Turn a list of jobs into a Gantt timeline under three policies, then compute the three numbers that tell you which policy is better.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Sort the jobs by (arrival, name) first. FCFS then walks that list, and the clock is max(clock, job.arrival) before each job so an idle CPU waits for the next arrival.",
+    "SJF is non-preemptive. When the CPU becomes free, build the list of jobs with arrival <= clock and pick min by (burst, arrival, name). If that list is empty, jump the clock to the earliest arrival still pending.",
+    "For SRTF, step the clock one tick at a time. At every tick pick min by (remaining, arrival, name) among arrived, unfinished jobs, run it for one tick, and append (name, t, t + 1). Then call merge_slices.",
+    "Idle time is not recorded. If no job has arrived at tick t, jump to the earliest arrival that is still unfinished instead of looping one tick at a time.",
+    "turnaround = completion - arrival, response = first start - arrival, waiting = turnaround - burst. Completion is the largest end among a job's segments; first start is the smallest start."
+  ]
+}

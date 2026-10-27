@@ -1,0 +1,16 @@
+{
+  "id": "05-kernel-mode-and-system-calls",
+  "title": "Build a toy kernel with a system call table",
+  "brief": "Write the handlers and trap dispatcher of a toy kernel that validates user requests and returns negative errno codes, then make two real system calls through a pipe.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "A failed system call returns a negative errno number: `-EBADF`, `-EFAULT`, and so on. `errno_name(-9)` gives `\"EBADF\"`, and a non-negative result gives `None`.",
+    "`sys_getpid(kernel)` returns `kernel.pid`. `sys_exit(kernel, status)` sets `kernel.exited = True` and stores `status & 0xFF`, because a real exit status is one byte.",
+    "In `sys_write`, validate in this order: the file descriptor is a key of `kernel.files` (else `-EBADF`), `count` is not negative (else `-EINVAL`), the range `addr .. addr + count` lies inside `kernel.user_mem` (else `-EFAULT`). Only then copy the bytes.",
+    "Copy with `bytes(kernel.user_mem[addr:addr + count])` and extend `kernel.files[fd]`. Return `count`.",
+    "`Kernel.syscall` is the trap handler. Look the number up in `self.table`, return `-ENOSYS` if it is missing, return `-EINVAL` if the argument count is wrong, set `self.mode = \"kernel\"`, call the handler, and put the mode back to `\"user\"` in a `finally` block.",
+    "Count every trap in `self.syscall_count`, even one that fails. For the real part, `os.pipe()` returns `(read_fd, write_fd)`. Close both ends before you return. Writing to a closed descriptor raises `OSError` with `.errno` set, and `errno.errorcode[e.errno]` is the name."
+  ]
+}

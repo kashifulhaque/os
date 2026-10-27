@@ -1,0 +1,16 @@
+{
+  "id": "21-deadlock",
+  "title": "Detect deadlock, avoid it with the Banker's algorithm, and prevent it with lock ordering",
+  "brief": "Build a wait-for graph and find its cycle, run the Banker's safety check on the classic five-process example, and fix dining philosophers with a global lock order.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "wait_for_graph: start with every thread mapped to an empty set. For each thread and each lock it wants, if the lock has an owner, add that owner to the thread's set. Sort at the end.",
+    "find_cycle with depth-first search: keep the current path as a list. Reaching a node that is already on the path means path[path.index(node):] is a cycle. Nodes you have fully explored without finding one need not be visited again.",
+    "Remaining need is max_need[i][j] - allocation[i][j]. In is_safe, a process 'fits' when every need[i][j] <= work[j].",
+    "When is_safe finishes a process, it adds that process's allocation (not its need) to work, because the process returns everything it holds.",
+    "request_resources has three outcomes in this order: raise ValueError if request > need, return False if request > available, otherwise pretend to grant on copies and return whether is_safe finds a sequence.",
+    "Philosopher i uses forks i and (i + 1) % n. The last philosopher's pair is (n - 1, 0). Sorting the pair so the smaller number comes first breaks the circular wait."
+  ]
+}

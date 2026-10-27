@@ -1,0 +1,5 @@
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
+python-frontmatter==1.1.0

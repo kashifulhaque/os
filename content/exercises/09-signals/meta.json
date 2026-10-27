@@ -1,0 +1,16 @@
+{
+  "id": "09-signals",
+  "title": "Catch, send, and survive signals",
+  "brief": "Install handlers with signal.signal, send signals with os.kill, decode death-by-signal statuses, and build run_with_timeout with SIGALRM and SIGKILL.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "`signal.signal(signum, handler)` returns the previous handler. Keep it, and put it back in a `finally` block so your function leaves no trace.",
+    "`SIGKILL` and `SIGSTOP` cannot be caught. `signal.signal` raises `OSError` for them, which is all `can_catch` needs to notice.",
+    "To make signals pile up, block them first with `signal.pthread_sigmask(signal.SIG_BLOCK, {signum})`. They wait as pending, and unblocking delivers them. Pending standard signals do not queue.",
+    "A child that installs a handler races with a parent that sends the signal. Have the child write a byte to a pipe after `signal.signal`, and have the parent read that byte before it calls `os.kill`.",
+    "For `run_with_timeout`, start a timer with `signal.setitimer(signal.ITIMER_REAL, seconds)` and a SIGALRM handler that raises an exception. The exception breaks `os.waitpid` out of its wait.",
+    "After a timeout, send `SIGKILL` (a child can ignore `SIGTERM`), then call `os.waitpid` again to reap it. Always cancel the timer and restore the old SIGALRM handler in `finally`."
+  ]
+}

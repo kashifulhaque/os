@@ -1,0 +1,16 @@
+{
+  "id": "19-locks",
+  "title": "Build locks from atomic instructions and check them over every schedule",
+  "brief": "Write spin, compare-and-swap, ticket, and Peterson locks as step programs, then explore every reachable state to prove mutual exclusion or find the schedule that breaks it.",
+  "needs_gpu": false,
+  "timeout": 30,
+  "packages": [],
+  "hints": [
+    "Start with the spin lock. `tas` returns the OLD value, so old value 0 means you got the lock and 1 means someone else holds it. The program is: tas, jnz back to 0, critical section, set lock 0.",
+    "Jump targets are list indexes. critical_section() is 5 steps, so after two steps of lock code it occupies indexes 2 to 6, and the release is at index 7.",
+    "Ticket lock: `faa` returns the old value, which is your ticket. `sub s, t` makes s equal to now_serving minus your ticket, which is 0 exactly when it is your turn, so `jnz s, <the load>` keeps you spinning.",
+    "Peterson's wait loop is: enter if the other flag is 0, or if turn equals you. For the second test, `add t, -me` leaves 0 in t exactly when turn == me, so `jz t, <critical section>` works.",
+    "reachable is a breadth-first search. Keep a dict from machine.key() to the schedule that reached it and a frontier list. For each machine in the frontier and each unfinished thread, copy() the machine, step() the copy, and record it only if its key is new.",
+    "find_violation and final_values are loops over reachable(...).values(). Rebuild the machine for each schedule with run_schedule, then look at machine.in_cs or machine.done(tid)."
+  ]
+}
