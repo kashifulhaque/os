@@ -15,6 +15,8 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
+    UV_NO_CACHE=1 \
+    UV_SYSTEM_PYTHON=1 \
     DATA_DIR=/data
 
 WORKDIR /app
@@ -26,8 +28,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends procps \
     && rm -rf /var/lib/apt/lists/*
 
+# uv installs into the system Python, as pip did, several times faster.
+COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /usr/local/bin/uv
+
 COPY backend/requirements.txt ./backend/requirements.txt
-RUN pip install -r backend/requirements.txt
+RUN uv pip install -r backend/requirements.txt
 
 COPY backend/ ./backend/
 COPY content/ ./content/

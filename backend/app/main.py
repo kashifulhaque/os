@@ -1,14 +1,14 @@
 """The HTTP surface: public health/session status, and SSO-protected course data.
 
 Everything under `/api` needs a vetted proxy identity except `/api/health` and
-`/api/session`.
+`/api/session`. The MCP server at `/mcp` is the exception: it ignores the proxy
+identity and takes a bearer token.
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
-from pathlib import Path
+from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -16,17 +16,22 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Str
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import curriculum, db
+from . import curriculum, db, mcp_server, mcp_tokens
 from .auth import current_user
 from .config import Settings, get_settings
-from .runner import RunRequest, RunnerError, run_local
-
-app = FastAPI(title="Operating Systems", docs_url=None, redoc_url=None)
+from .runs import start_run
 
 
-@app.on_event("startup")
-def startup() -> None:
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     db.init()
+    async with mcp_server.lifespan():
+        yield
+
+
+app = FastAPI(
+    title="Operating Systems", docs_url=None, redoc_url=None, lifespan=lifespan
+)
 
 
 # Models -----------------------------------------------------------------
@@ -40,6 +45,10 @@ class DraftBody(BaseModel):
 
 class ProgressBody(BaseModel):
     status: str = Field(pattern="^(started|solved)$")
+
+
+class TokenBody(BaseModel):
+    name: str = Field(min_length=1, max_length=mcp_tokens.MAX_NAME_LENGTH)
 
 
 class RunBody(BaseModel):
@@ -174,46 +183,13 @@ async def run(
     user: str = Depends(current_user),
     settings: Settings = Depends(get_settings),
 ) -> StreamingResponse:
-    exercise = curriculum.get_exercise(body.exercise_id)
-    if exercise is None:
+    started = start_run(user, body.exercise_id, body.mode, body.code, settings)
+    if started is None:
         raise HTTPException(status_code=404, detail="No such exercise")
 
-    request = RunRequest(
-        exercise_id=body.exercise_id,
-        mode=body.mode,
-        code=body.code,
-        timeout=int(exercise["timeout"]),
-    )
-    backend = "local"
-
-    # A draft is saved on every run, so a closed tab never loses work.
-    db.save_draft(user, body.exercise_id, body.code)
-
     async def stream() -> AsyncIterator[bytes]:
-        summary: dict[str, Any] = {"ok": False}
-        yield _sse({"type": "begin", "backend": backend, "mode": body.mode})
-        try:
-            source = run_local(request, Path(exercise["directory"]), settings)
-            async for event in source:
-                if event.get("type") == "done":
-                    summary = event
-                yield _sse(event)
-        except RunnerError as exc:
-            yield _sse({"type": "error", "message": str(exc)})
-            yield _sse({"type": "done", "ok": False})
-        except asyncio.CancelledError:
-            # The reader navigated away. Nothing to report, and the local runner
-            # kills its process group on the way out.
-            raise
-        except Exception as exc:  # noqa: BLE001 - the stream must always close
-            yield _sse({"type": "error", "message": f"The runner failed: {exc}"})
-            yield _sse({"type": "done", "ok": False})
-        else:
-            db.record_run(user, body.exercise_id, body.mode, backend, summary)
-            if body.mode == "check" and summary.get("ok"):
-                for lesson in curriculum.lesson_list():
-                    if lesson.get("exercise") == body.exercise_id:
-                        db.set_progress(user, lesson["slug"], "solved")
+        async for event in started.events:
+            yield _sse(event)
 
     return StreamingResponse(
         stream(),
@@ -228,6 +204,49 @@ async def run(
 
 def _sse(event: dict[str, Any]) -> bytes:
     return f"data: {json.dumps(event, default=str)}\n\n".encode()
+
+
+# MCP --------------------------------------------------------------------
+
+
+def _token_view(record: dict[str, Any]) -> dict[str, Any]:
+    return {key: record.get(key) for key in ("id", "name", "prefix", "created_at", "last_used_at")}
+
+
+@app.get("/api/mcp/tokens")
+def list_mcp_tokens(
+    request: Request,
+    user: str = Depends(current_user),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """The MCP endpoint's URL and the caller's active tokens, without secrets."""
+    url = settings.mcp_public_url or str(request.base_url).rstrip("/") + "/mcp"
+    return {"url": url, "tokens": [_token_view(t) for t in db.list_tokens(user)]}
+
+
+@app.post("/api/mcp/tokens")
+def create_mcp_token(body: TokenBody, user: str = Depends(current_user)) -> dict[str, Any]:
+    """Create a token for the caller. The response is the only copy of the secret."""
+    try:
+        record = mcp_tokens.create_token(user, body.name)
+    except mcp_tokens.TokenLimitError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {key: record[key] for key in ("id", "name", "prefix", "created_at", "token")}
+
+
+@app.delete("/api/mcp/tokens/{token_id}")
+def revoke_mcp_token(token_id: int, user: str = Depends(current_user)) -> dict[str, Any]:
+    if not db.revoke_token(token_id, username=user):
+        raise HTTPException(status_code=404, detail="No such token")
+    return {"revoked": True}
+
+
+# Both spellings are routes of their own, so neither redirects: MCP clients
+# don't follow a redirect on POST. They are registered before the SPA catch-all.
+app.router.add_route("/mcp", mcp_server.endpoint, include_in_schema=False)
+app.router.add_route("/mcp/", mcp_server.endpoint, include_in_schema=False)
 
 
 # Static assets ----------------------------------------------------------
@@ -245,7 +264,9 @@ def _mount_frontend() -> None:
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str) -> Any:
-        if path.startswith("api/"):
+        # .well-known/ too: an MCP client probes it for OAuth metadata, and an
+        # HTML page with 200 there reads as a broken OAuth server.
+        if path.startswith(("api/", "mcp/", ".well-known/")):
             return JSONResponse({"detail": "Not found"}, status_code=404)
         candidate = dist / path
         if path and candidate.is_file() and dist in candidate.resolve().parents:
